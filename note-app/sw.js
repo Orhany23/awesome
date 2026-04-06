@@ -28,6 +28,24 @@ self.addEventListener('fetch', e => {
   );
 });
 
+// Show notification from app
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag, alarm } = e.data;
+    e.waitUntil(
+      self.registration.showNotification(title, {
+        body,
+        tag,
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png',
+        requireInteraction: true,
+        silent: !alarm,
+        vibrate: alarm ? [300, 200, 300, 200, 500] : undefined,
+      })
+    );
+  }
+});
+
 // Handle notification click
 self.addEventListener('notificationclick', e => {
   e.notification.close();
