@@ -632,6 +632,41 @@ body {
   <script>
 'use strict';
 
+// ===== Capacitor Bridge =====
+// Çalışma ortamına göre yerel bildirim veya web bildirimi kullanır
+const isNative = () => window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+
+async function scheduleNativeNotification(note) {
+  if (!isNative()) return false;
+  try {
+    const { LocalNotifications } = window.Capacitor.Plugins;
+    const perm = await LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') return false;
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: Math.abs(note.id.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 2147483647,
+        title: note.title || 'Hatırlatıcı',
+        body: note.body || 'Zamanı geldi!',
+        schedule: { at: new Date(note.reminder) },
+        sound: note.alarm ? 'beep.wav' : null,
+        smallIcon: 'ic_stat_icon',
+        actionTypeId: '',
+        extra: { noteId: note.id }
+      }]
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+async function cancelNativeNotification(noteId) {
+  if (!isNative()) return;
+  try {
+    const { LocalNotifications } = window.Capacitor.Plugins;
+    const id = Math.abs(noteId.split('').reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0)) % 2147483647;
+    await LocalNotifications.cancel({ notifications: [{ id }] });
+  } catch(e) {}
+}
+
 // ===== State =====
 let notes = [];
 let editingId = null;
@@ -939,16 +974,23 @@ document.addEventListener('touchstart', () => { try { getAudioCtx().resume(); } 
 function scheduleReminder(note) {
   if (!note.reminder) return;
   const delay = note.reminder - Date.now();
-  if (delay <= 0) return; // already past
+  if (delay <= 0) return;
 
+  // Native platformda (iOS/Android) sistem bildirimi kullan
+  if (isNative()) {
+    scheduleNativeNotification(note);
+    return;
+  }
+
+  // Web: setTimeout ile
   const timer = setTimeout(() => {
     fireReminder(note);
   }, delay);
-
   reminderTimers[note.id] = timer;
 }
 
 function clearReminderTimer(id) {
+  cancelNativeNotification(id);
   if (reminderTimers[id]) {
     clearTimeout(reminderTimers[id]);
     delete reminderTimers[id];
