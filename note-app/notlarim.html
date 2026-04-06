@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Notlarım" />
+  <meta name="theme-color" content="#6C63FF" />
+  <title>Notlarım</title>
+  <style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #6C63FF;
+  --accent-dark: #5A52D5;
+  --danger: #EF4444;
+  --bg: #F5F5F7;
+  --card-bg: #ffffff;
+  --text: #1C1C1E;
+  --text-muted: #6E6E73;
+  --border: #E5E5EA;
+  --shadow: 0 2px 12px rgba(0,0,0,0.10);
+  --radius: 16px;
+  --header-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1C1C1E;
+    --card-bg: #2C2C2E;
+    --text: #F5F5F7;
+    --text-muted: #98989D;
+    --border: #3A3A3C;
+    --shadow: 0 2px 12px rgba(0,0,0,0.40);
+  }
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-bottom: calc(20px + var(--safe-bottom));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Header ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(108, 99, 255, 1);
+  padding-top: var(--safe-top);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  height: var(--header-h);
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+/* ===== Icon Buttons ===== */
+.btn-icon {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.15s;
+}
+.btn-icon:active { background: rgba(255,255,255,0.3); }
+.btn-icon svg { width: 20px; height: 20px; }
+
+/* ===== Search ===== */
+.search-wrap { padding: 14px 16px 6px; }
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-box input:focus { border-color: var(--accent); }
+
+/* ===== Tabs ===== */
+.tabs-wrap {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs-wrap::-webkit-scrollbar { display: none; }
+.tab {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== Notes Container ===== */
+.notes-container {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .notes-container { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.empty-icon { font-size: 56px; margin-bottom: 12px; }
+.empty-state p { font-size: 16px; font-weight: 500; }
+.empty-sub { font-size: 14px; margin-top: 6px; font-weight: 400; }
+
+/* ===== Note Card ===== */
+.note-card {
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.note-card:active { transform: scale(0.97); }
+
+.note-card.pinned::before {
+  content: "📌";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 14px;
+}
+
+.note-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1C1C1E;
+  line-height: 1.3;
+  word-break: break-word;
+  padding-right: 20px;
+}
+
+.note-body {
+  font-size: 13px;
+  color: #3C3C43;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  flex: 1;
+  word-break: break-word;
+}
+
+.note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.note-date {
+  font-size: 11px;
+  color: #6E6E73;
+}
+
+.note-reminder-badge {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(108,99,255,0.12);
+  color: #6C63FF;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.note-reminder-badge.overdue {
+  background: rgba(239,68,68,0.12);
+  color: #EF4444;
+}
+
+/* ===== Overlay ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ===== Modal ===== */
+.modal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--card-bg);
+  border-radius: 24px 24px 0 0;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding-bottom: calc(16px + var(--safe-bottom));
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 12px;
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+
+.modal-header .btn-icon {
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 18px; }
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px 0;
+  border-top: 1px solid var(--border);
+}
+
+/* ===== Form Fields ===== */
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.label-hint { text-transform: none; font-weight: 400; }
+
+.field-group input[type="text"],
+.field-group input[type="datetime-local"],
+.field-group textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+.field-group input:focus,
+.field-group textarea:focus {
+  border-color: var(--accent);
+}
+
+.btn-clear-reminder {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 13px;
+  padding: 6px 0 0;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ===== Toggle ===== */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row !important;
+}
+.toggle-row .label { margin-bottom: 0; }
+
+.toggle { position: relative; display: inline-block; width: 50px; height: 28px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+/* ===== Color Picker ===== */
+.color-row { display: flex; align-items: center; gap: 12px; }
+.color-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.color-dot.active { border-color: var(--accent); transform: scale(1.2); }
+.color-dot[data-color="#ffffff"] { border-color: #ddd; }
+.color-dot[data-color="#ffffff"].active { border-color: var(--accent); }
+
+/* ===== Buttons ===== */
+.btn-primary {
+  flex: 1;
+  padding: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-primary:active { background: var(--accent-dark); transform: scale(0.98); }
+
+.btn-secondary {
+  padding: 14px 20px;
+  background: transparent;
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-secondary:active { background: rgba(239,68,68,0.08); }
+
+/* ===== Reminder Banner ===== */
+.reminder-banner {
+  position: fixed;
+  bottom: calc(20px + var(--safe-bottom));
+  left: 16px;
+  right: 16px;
+  z-index: 400;
+  background: var(--accent);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+  animation: slideUp 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+.reminder-banner button {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ===== Notification Prompt ===== */
+.notif-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.notif-prompt-inner {
+  width: 100%;
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.notif-icon { font-size: 44px; margin-bottom: 12px; }
+.notif-prompt-inner p { font-size: 15px; color: var(--text); line-height: 1.5; }
+.notif-sub { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+.notif-actions { display: flex; gap: 10px; margin-top: 20px; }
+.notif-actions .btn-secondary { flex: 1; color: var(--text-muted); border-color: var(--border); }
+.notif-actions .btn-primary { flex: 1; }
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="app-title">📝 Notlarım</h1>
+      <button class="btn-icon" id="addBtn" title="Yeni Not">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="search" id="searchInput" placeholder="Not ara..." autocomplete="off" />
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="tabs-wrap">
+    <button class="tab active" data-filter="all">Tümü</button>
+    <button class="tab" data-filter="reminder">⏰ Hatırlatıcılı</button>
+    <button class="tab" data-filter="pinned">📌 Sabitlendi</button>
+  </div>
+
+  <!-- Notes Grid -->
+  <main class="notes-container" id="notesContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🗒️</div>
+      <p>Henüz not yok.</p>
+      <p class="empty-sub">+ düğmesine basarak ilk notunu ekle!</p>
+    </div>
+  </main>
+
+  <!-- Reminder Countdown Banner -->
+  <div class="reminder-banner" id="reminderBanner" style="display:none">
+    <span id="reminderBannerText"></span>
+    <button id="reminderBannerClose">✕</button>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="overlay" id="overlay" style="display:none"></div>
+
+  <!-- Note Modal -->
+  <div class="modal" id="noteModal" style="display:none">
+    <div class="modal-header">
+      <h2 id="modalTitle">Yeni Not</h2>
+      <button class="btn-icon" id="closeModalBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="color-row">
+        <span class="label">Renk</span>
+        <div class="color-options" id="colorOptions">
+          <button class="color-dot active" data-color="#ffffff" style="background:#ffffff"></button>
+          <button class="color-dot" data-color="#fef3c7" style="background:#fef3c7"></button>
+          <button class="color-dot" data-color="#d1fae5" style="background:#d1fae5"></button>
+          <button class="color-dot" data-color="#dbeafe" style="background:#dbeafe"></button>
+          <button class="color-dot" data-color="#ede9fe" style="background:#ede9fe"></button>
+          <button class="color-dot" data-color="#fce7f3" style="background:#fce7f3"></button>
+          <button class="color-dot" data-color="#fee2e2" style="background:#fee2e2"></button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="label" for="noteTitle">Başlık</label>
+        <input type="text" id="noteTitle" placeholder="Not başlığı..." maxlength="80" />
+      </div>
+
+      <div class="field-group">
+        <label class="label" for="noteContent">İçerik</label>
+        <textarea id="noteContent" placeholder="Notunu buraya yaz..." rows="5"></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="label" for="noteReminder">
+          ⏰ Hatırlatıcı
+          <span class="label-hint">(isteğe bağlı)</span>
+        </label>
+        <input type="datetime-local" id="noteReminder" />
+        <button class="btn-clear-reminder" id="clearReminderBtn" style="display:none">
+          Hatırlatıcıyı kaldır
+        </button>
+      </div>
+
+      <div class="field-group toggle-row">
+        <label class="label" for="notePin">📌 Sabitle</label>
+        <label class="toggle">
+          <input type="checkbox" id="notePin" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="deleteNoteBtn" style="display:none">Sil</button>
+      <button class="btn-primary" id="saveNoteBtn">Kaydet</button>
+    </div>
+  </div>
+
+  <!-- Notification Permission Prompt -->
+  <div class="notif-prompt" id="notifPrompt" style="display:none">
+    <div class="notif-prompt-inner">
+      <div class="notif-icon">🔔</div>
+      <p><strong>Hatırlatıcılar için bildirim iznine ihtiyaç var</strong></p>
+      <p class="notif-sub">Zamanı geldiğinde seni uyarmamız için izin ver.</p>
+      <div class="notif-actions">
+        <button class="btn-secondary" id="notifDenyBtn">Şimdi değil</button>
+        <button class="btn-primary" id="notifAllowBtn">İzin ver</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+'use strict';
+
+// ===== State =====
+let notes = [];
+let editingId = null;
+let currentFilter = 'all';
+let selectedColor = '#ffffff';
+let reminderTimers = {};
+
+// ===== DOM References =====
+const notesContainer  = document.getElementById('notesContainer');
+const emptyState      = document.getElementById('emptyState');
+const addBtn          = document.getElementById('addBtn');
+const searchInput     = document.getElementById('searchInput');
+const overlay         = document.getElementById('overlay');
+const noteModal       = document.getElementById('noteModal');
+const modalTitle      = document.getElementById('modalTitle');
+const noteTitle       = document.getElementById('noteTitle');
+const noteContent     = document.getElementById('noteContent');
+const noteReminder    = document.getElementById('noteReminder');
+const notePin         = document.getElementById('notePin');
+const saveNoteBtn     = document.getElementById('saveNoteBtn');
+const deleteNoteBtn   = document.getElementById('deleteNoteBtn');
+const closeModalBtn   = document.getElementById('closeModalBtn');
+const clearReminderBtn= document.getElementById('clearReminderBtn');
+const reminderBanner  = document.getElementById('reminderBanner');
+const reminderBannerText = document.getElementById('reminderBannerText');
+const reminderBannerClose = document.getElementById('reminderBannerClose');
+const notifPrompt     = document.getElementById('notifPrompt');
+const notifAllowBtn   = document.getElementById('notifAllowBtn');
+const notifDenyBtn    = document.getElementById('notifDenyBtn');
+const colorOptions    = document.getElementById('colorOptions');
+const tabs            = document.querySelectorAll('.tab');
+
+// ===== Storage =====
+function loadNotes() {
+  try {
+    notes = JSON.parse(localStorage.getItem('notes_v2') || '[]');
+  } catch {
+    notes = [];
+  }
+}
+
+function saveNotes() {
+  localStorage.setItem('notes_v2', JSON.stringify(notes));
+}
+
+// ===== ID & Date Helpers =====
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60_000)       return 'Az önce';
+  if (diff < 3_600_000)    return `${Math.floor(diff/60_000)} dk önce`;
+  if (diff < 86_400_000)   return `${Math.floor(diff/3_600_000)} sa önce`;
+  if (diff < 604_800_000)  return `${Math.floor(diff/86_400_000)} gün önce`;
+  return d.toLocaleDateString('tr-TR', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function formatReminderTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = d - now;
+  if (diff <= 0) return null; // overdue handled separately
+  if (diff < 3_600_000)  return `${Math.floor(diff/60_000)} dk kaldı`;
+  if (diff < 86_400_000) return `${Math.floor(diff/3_600_000)} sa kaldı`;
+  return d.toLocaleDateString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+
+// ===== Render =====
+function getFilteredNotes() {
+  const q = searchInput.value.trim().toLowerCase();
+  return notes
+    .filter(n => {
+      if (currentFilter === 'reminder') return !!n.reminder;
+      if (currentFilter === 'pinned')   return !!n.pinned;
+      return true;
+    })
+    .filter(n => {
+      if (!q) return true;
+      return (n.title + ' ' + n.body).toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return b.createdAt - a.createdAt;
+    });
+}
+
+function render() {
+  const filtered = getFilteredNotes();
+
+  // remove existing cards
+  Array.from(notesContainer.querySelectorAll('.note-card')).forEach(el => el.remove());
+
+  if (filtered.length === 0) {
+    emptyState.style.display = '';
+  } else {
+    emptyState.style.display = 'none';
+    filtered.forEach(note => {
+      const card = buildCard(note);
+      notesContainer.appendChild(card);
+    });
+  }
+}
+
+function buildCard(note) {
+  const card = document.createElement('div');
+  card.className = 'note-card' + (note.pinned ? ' pinned' : '');
+  card.style.background = note.color || '#ffffff';
+  card.dataset.id = note.id;
+
+  const now = Date.now();
+  const isOverdue = note.reminder && note.reminder < now;
+
+  card.innerHTML = `
+    ${note.title ? `<div class="note-title">${escapeHtml(note.title)}</div>` : ''}
+    <div class="note-body">${escapeHtml(note.body || '')}</div>
+    <div class="note-footer">
+      <span class="note-date">${formatDate(note.createdAt)}</span>
+      ${note.reminder ? `
+        <span class="note-reminder-badge ${isOverdue ? 'overdue' : ''}">
+          ${isOverdue ? '⏰ Geçti' : '⏰ ' + (formatReminderTime(note.reminder) || 'Bugün')}
+        </span>
+      ` : ''}
+    </div>
+  `;
+
+  card.addEventListener('click', () => openEditModal(note.id));
+  return card;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ===== Modal =====
+function openAddModal() {
+  editingId = null;
+  modalTitle.textContent = 'Yeni Not';
+  noteTitle.value = '';
+  noteContent.value = '';
+  noteReminder.value = '';
+  notePin.checked = false;
+  deleteNoteBtn.style.display = 'none';
+  clearReminderBtn.style.display = 'none';
+  setSelectedColor('#ffffff');
+  showModal();
+}
+
+function openEditModal(id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  editingId = id;
+  modalTitle.textContent = 'Notu Düzenle';
+  noteTitle.value = note.title || '';
+  noteContent.value = note.body || '';
+  notePin.checked = !!note.pinned;
+  deleteNoteBtn.style.display = '';
+
+  if (note.reminder) {
+    noteReminder.value = toDatetimeLocalValue(note.reminder);
+    clearReminderBtn.style.display = '';
+  } else {
+    noteReminder.value = '';
+    clearReminderBtn.style.display = 'none';
+  }
+
+  setSelectedColor(note.color || '#ffffff');
+  showModal();
+}
+
+function showModal() {
+  overlay.style.display = '';
+  noteModal.style.display = '';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => noteTitle.focus(), 300);
+}
+
+function closeModal() {
+  overlay.style.display = 'none';
+  noteModal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function toDatetimeLocalValue(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ===== Color Picker =====
+function setSelectedColor(color) {
+  selectedColor = color;
+  colorOptions.querySelectorAll('.color-dot').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.color === color);
+  });
+}
+
+colorOptions.addEventListener('click', e => {
+  const dot = e.target.closest('.color-dot');
+  if (dot) setSelectedColor(dot.dataset.color);
+});
+
+// ===== Save / Delete =====
+function saveNote() {
+  const title = noteTitle.value.trim();
+  const body  = noteContent.value.trim();
+  if (!title && !body) {
+    noteTitle.focus();
+    noteTitle.style.borderColor = '#EF4444';
+    setTimeout(() => noteTitle.style.borderColor = '', 1500);
+    return;
+  }
+
+  let reminderTs = null;
+  if (noteReminder.value) {
+    reminderTs = new Date(noteReminder.value).getTime();
+    if (isNaN(reminderTs)) reminderTs = null;
+  }
+
+  if (editingId) {
+    const idx = notes.findIndex(n => n.id === editingId);
+    if (idx !== -1) {
+      const old = notes[idx];
+      notes[idx] = { ...old, title, body, color: selectedColor, pinned: notePin.checked, reminder: reminderTs, updatedAt: Date.now() };
+      clearReminderTimer(editingId);
+      if (reminderTs) scheduleReminder(notes[idx]);
+    }
+  } else {
+    const note = { id: uid(), title, body, color: selectedColor, pinned: notePin.checked, reminder: reminderTs, createdAt: Date.now(), updatedAt: Date.now() };
+    notes.unshift(note);
+    if (reminderTs) scheduleReminder(note);
+  }
+
+  saveNotes();
+  render();
+  closeModal();
+
+  if (reminderTs && Notification.permission !== 'granted') {
+    showNotifPrompt();
+  }
+}
+
+function deleteNote() {
+  if (!editingId) return;
+  clearReminderTimer(editingId);
+  notes = notes.filter(n => n.id !== editingId);
+  saveNotes();
+  render();
+  closeModal();
+}
+
+// ===== Reminders =====
+function scheduleReminder(note) {
+  if (!note.reminder) return;
+  const delay = note.reminder - Date.now();
+  if (delay <= 0) return; // already past
+
+  const timer = setTimeout(() => {
+    fireReminder(note);
+  }, delay);
+
+  reminderTimers[note.id] = timer;
+}
+
+function clearReminderTimer(id) {
+  if (reminderTimers[id]) {
+    clearTimeout(reminderTimers[id]);
+    delete reminderTimers[id];
+  }
+}
+
+function fireReminder(note) {
+  // Update card to show overdue
+  render();
+
+  // In-app banner
+  const text = `⏰ ${note.title || 'Hatırlatıcı'}: ${note.body ? note.body.slice(0, 60) : 'Zamanı geldi!'}`;
+  showReminderBanner(text);
+
+  // Push notification if allowed
+  if (Notification.permission === 'granted') {
+    try {
+      const n = new Notification(note.title || 'Hatırlatıcı', {
+        body: note.body || 'Zamanı geldi!',
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
+        tag: note.id,
+        requireInteraction: true,
+      });
+      n.onclick = () => { window.focus(); openEditModal(note.id); n.close(); };
+    } catch(e) { /* SW handles it */ }
+  }
+}
+
+function showReminderBanner(text) {
+  reminderBannerText.textContent = text;
+  reminderBanner.style.display = '';
+  clearTimeout(reminderBanner._hideTimer);
+  reminderBanner._hideTimer = setTimeout(() => reminderBanner.style.display = 'none', 8000);
+}
+
+function initReminders() {
+  notes.forEach(note => {
+    if (note.reminder && note.reminder > Date.now()) {
+      scheduleReminder(note);
+    }
+  });
+}
+
+// ===== Notification Permission =====
+function showNotifPrompt() {
+  if (Notification.permission === 'denied') return;
+  if (localStorage.getItem('notif_asked')) return;
+  notifPrompt.style.display = '';
+}
+
+notifAllowBtn.addEventListener('click', async () => {
+  notifPrompt.style.display = 'none';
+  localStorage.setItem('notif_asked', '1');
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      new Notification('Notlarım', { body: '🔔 Hatırlatıcılar aktif! Zamanı gelince seni uyaracağım.' });
+    }
+  } catch(e) {}
+});
+
+notifDenyBtn.addEventListener('click', () => {
+  notifPrompt.style.display = 'none';
+  localStorage.setItem('notif_asked', '1');
+});
+
+// ===== Event Listeners =====
+addBtn.addEventListener('click', openAddModal);
+closeModalBtn.addEventListener('click', closeModal);
+overlay.addEventListener('click', closeModal);
+saveNoteBtn.addEventListener('click', saveNote);
+deleteNoteBtn.addEventListener('click', deleteNote);
+
+clearReminderBtn.addEventListener('click', () => {
+  noteReminder.value = '';
+  clearReminderBtn.style.display = 'none';
+});
+
+noteReminder.addEventListener('change', () => {
+  clearReminderBtn.style.display = noteReminder.value ? '' : 'none';
+});
+
+searchInput.addEventListener('input', render);
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    render();
+  });
+});
+
+reminderBannerClose.addEventListener('click', () => {
+  reminderBanner.style.display = 'none';
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && noteModal.style.display !== 'none') saveNote();
+});
+
+
+
+// ===== Auto-refresh relative dates =====
+setInterval(() => { render(); }, 60_000);
+
+// ===== Init =====
+loadNotes();
+initReminders();
+render();
+
+// Show notification prompt on first load if there are notes with reminders
+if (notes.some(n => n.reminder) && Notification.permission === 'default' && !localStorage.getItem('notif_asked')) {
+  setTimeout(showNotifPrompt, 2000);
+}
+
+  </script>
+</body>
+</html>
