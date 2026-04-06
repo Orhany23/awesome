@@ -101,14 +101,25 @@
 
       <!-- Reminder -->
       <div class="field-group">
-        <label class="label" for="noteReminder">
+        <label class="label">
           ⏰ Hatırlatıcı
           <span class="label-hint">(isteğe bağlı)</span>
         </label>
-        <input type="datetime-local" id="noteReminder" />
-        <button class="btn-clear-reminder" id="clearReminderBtn" style="display:none">
-          Hatırlatıcıyı kaldır
-        </button>
+        <!-- Quick preset buttons -->
+        <div class="reminder-presets" id="reminderPresets">
+          <button class="preset-btn" data-preset="30m">30 dk</button>
+          <button class="preset-btn" data-preset="1h">1 saat</button>
+          <button class="preset-btn" data-preset="3h">3 saat</button>
+          <button class="preset-btn" data-preset="tomorrow">Yarın</button>
+          <button class="preset-btn" data-preset="nextweek">Gelecek Hafta</button>
+          <button class="preset-btn" data-preset="custom">🗓 Özel</button>
+        </div>
+        <!-- Custom datetime input (hidden until "Özel" selected) -->
+        <input type="datetime-local" id="noteReminder" style="display:none; margin-top:10px;" />
+        <div class="reminder-selected" id="reminderSelected" style="display:none">
+          <span id="reminderSelectedText"></span>
+          <button class="btn-clear-reminder" id="clearReminderBtn">✕ Kaldır</button>
+        </div>
       </div>
 
       <!-- Alarm -->

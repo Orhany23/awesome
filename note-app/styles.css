@@ -476,6 +476,47 @@ body {
 .notif-actions .btn-secondary { flex: 1; color: var(--text-muted); border-color: var(--border); }
 .notif-actions .btn-primary { flex: 1; }
 
+/* ===== Reminder Presets ===== */
+.reminder-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preset-btn {
+  padding: 8px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.preset-btn:active { transform: scale(0.95); }
+.preset-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.reminder-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(108,99,255,0.08);
+  border: 1.5px solid rgba(108,99,255,0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+#reminderSelectedText {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

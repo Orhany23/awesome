@@ -65,8 +65,52 @@ const reminderBannerClose = document.getElementById('reminderBannerClose');
 const notifPrompt     = document.getElementById('notifPrompt');
 const notifAllowBtn   = document.getElementById('notifAllowBtn');
 const notifDenyBtn    = document.getElementById('notifDenyBtn');
-const colorOptions    = document.getElementById('colorOptions');
-const tabs            = document.querySelectorAll('.tab');
+const colorOptions       = document.getElementById('colorOptions');
+const tabs               = document.querySelectorAll('.tab');
+const reminderPresets    = document.getElementById('reminderPresets');
+const reminderSelected   = document.getElementById('reminderSelected');
+const reminderSelectedText = document.getElementById('reminderSelectedText');
+
+// ===== Reminder Presets =====
+function getPresetTimestamp(preset) {
+  const now = new Date();
+  switch (preset) {
+    case '30m':      return now.getTime() + 30 * 60_000;
+    case '1h':       return now.getTime() + 60 * 60_000;
+    case '3h':       return now.getTime() + 3 * 60 * 60_000;
+    case 'tomorrow': {
+      const d = new Date(now); d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0); return d.getTime();
+    }
+    case 'nextweek': {
+      const d = new Date(now); d.setDate(d.getDate() + 7);
+      d.setHours(9, 0, 0, 0); return d.getTime();
+    }
+    default: return null;
+  }
+}
+
+function getPresetLabel(preset) {
+  const labels = { '30m':'30 dakika sonra', '1h':'1 saat sonra', '3h':'3 saat sonra', 'tomorrow':'Yarın saat 09:00', 'nextweek':'Gelecek hafta' };
+  return labels[preset] || '';
+}
+
+function setReminderDisplay(ts, presetKey) {
+  if (!ts) { clearReminderDisplay(); return; }
+  const d = new Date(ts);
+  const fmt = d.toLocaleDateString('tr-TR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+  reminderSelectedText.textContent = '⏰ ' + (presetKey ? getPresetLabel(presetKey) + ' — ' : '') + fmt;
+  reminderSelected.style.display = '';
+  // highlight selected preset btn
+  reminderPresets.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('selected', b.dataset.preset === presetKey));
+}
+
+function clearReminderDisplay() {
+  noteReminder.value = '';
+  noteReminder.style.display = 'none';
+  reminderSelected.style.display = 'none';
+  reminderPresets.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+}
 
 // ===== Storage =====
 function loadNotes() {
@@ -180,11 +224,10 @@ function openAddModal() {
   modalTitle.textContent = 'Yeni Not';
   noteTitle.value = '';
   noteContent.value = '';
-  noteReminder.value = '';
   notePin.checked = false;
   noteAlarm.checked = false;
   deleteNoteBtn.style.display = 'none';
-  clearReminderBtn.style.display = 'none';
+  clearReminderDisplay();
   setSelectedColor('#ffffff');
   showModal();
 }
@@ -199,15 +242,12 @@ function openEditModal(id) {
   notePin.checked = !!note.pinned;
   noteAlarm.checked = !!note.alarm;
   deleteNoteBtn.style.display = '';
-
   if (note.reminder) {
+    setReminderDisplay(note.reminder, null);
     noteReminder.value = toDatetimeLocalValue(note.reminder);
-    clearReminderBtn.style.display = '';
   } else {
-    noteReminder.value = '';
-    clearReminderBtn.style.display = 'none';
+    clearReminderDisplay();
   }
-
   setSelectedColor(note.color || '#ffffff');
   showModal();
 }
@@ -439,13 +479,37 @@ overlay.addEventListener('click', closeModal);
 saveNoteBtn.addEventListener('click', saveNote);
 deleteNoteBtn.addEventListener('click', deleteNote);
 
-clearReminderBtn.addEventListener('click', () => {
-  noteReminder.value = '';
-  clearReminderBtn.style.display = 'none';
+// Preset buttons
+reminderPresets.addEventListener('click', e => {
+  const btn = e.target.closest('.preset-btn');
+  if (!btn) return;
+  const preset = btn.dataset.preset;
+  if (preset === 'custom') {
+    // Show datetime picker
+    noteReminder.style.display = '';
+    noteReminder.focus();
+    reminderPresets.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('selected', b.dataset.preset === 'custom'));
+  } else {
+    const ts = getPresetTimestamp(preset);
+    noteReminder.value = toDatetimeLocalValue(ts);
+    noteReminder.style.display = 'none';
+    setReminderDisplay(ts, preset);
+  }
 });
 
+// Custom datetime input
 noteReminder.addEventListener('change', () => {
-  clearReminderBtn.style.display = noteReminder.value ? '' : 'none';
+  if (noteReminder.value) {
+    const ts = new Date(noteReminder.value).getTime();
+    setReminderDisplay(ts, 'custom');
+  } else {
+    clearReminderDisplay();
+  }
+});
+
+// Clear reminder
+clearReminderBtn.addEventListener('click', () => {
+  clearReminderDisplay();
 });
 
 searchInput.addEventListener('input', render);
