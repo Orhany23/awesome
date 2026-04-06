@@ -19,6 +19,7 @@ const noteTitle       = document.getElementById('noteTitle');
 const noteContent     = document.getElementById('noteContent');
 const noteReminder    = document.getElementById('noteReminder');
 const notePin         = document.getElementById('notePin');
+const noteAlarm       = document.getElementById('noteAlarm');
 const saveNoteBtn     = document.getElementById('saveNoteBtn');
 const deleteNoteBtn   = document.getElementById('deleteNoteBtn');
 const closeModalBtn   = document.getElementById('closeModalBtn');
@@ -146,6 +147,7 @@ function openAddModal() {
   noteContent.value = '';
   noteReminder.value = '';
   notePin.checked = false;
+  noteAlarm.checked = false;
   deleteNoteBtn.style.display = 'none';
   clearReminderBtn.style.display = 'none';
   setSelectedColor('#ffffff');
@@ -160,6 +162,7 @@ function openEditModal(id) {
   noteTitle.value = note.title || '';
   noteContent.value = note.body || '';
   notePin.checked = !!note.pinned;
+  noteAlarm.checked = !!note.alarm;
   deleteNoteBtn.style.display = '';
 
   if (note.reminder) {
@@ -227,12 +230,12 @@ function saveNote() {
     const idx = notes.findIndex(n => n.id === editingId);
     if (idx !== -1) {
       const old = notes[idx];
-      notes[idx] = { ...old, title, body, color: selectedColor, pinned: notePin.checked, reminder: reminderTs, updatedAt: Date.now() };
+      notes[idx] = { ...old, title, body, color: selectedColor, pinned: notePin.checked, alarm: noteAlarm.checked, reminder: reminderTs, updatedAt: Date.now() };
       clearReminderTimer(editingId);
       if (reminderTs) scheduleReminder(notes[idx]);
     }
   } else {
-    const note = { id: uid(), title, body, color: selectedColor, pinned: notePin.checked, reminder: reminderTs, createdAt: Date.now(), updatedAt: Date.now() };
+    const note = { id: uid(), title, body, color: selectedColor, pinned: notePin.checked, alarm: noteAlarm.checked, reminder: reminderTs, createdAt: Date.now(), updatedAt: Date.now() };
     notes.unshift(note);
     if (reminderTs) scheduleReminder(note);
   }
@@ -254,6 +257,51 @@ function deleteNote() {
   render();
   closeModal();
 }
+
+// ===== Alarm Sound (Web Audio API) =====
+let _audioCtx = null;
+let _alarmInterval = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function playAlarmBeep() {
+  const ctx = getAudioCtx();
+  // Resume context (required after user gesture on iOS — fires on first interaction)
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const freqs = [880, 1100, 880, 1100];
+  let t = ctx.currentTime;
+  freqs.forEach(freq => {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.6, t + 0.05);
+    gain.gain.linearRampToValueAtTime(0, t + 0.18);
+    osc.start(t);
+    osc.stop(t + 0.2);
+    t += 0.22;
+  });
+}
+
+function startAlarm() {
+  stopAlarm();
+  playAlarmBeep();
+  _alarmInterval = setInterval(playAlarmBeep, 3000);
+}
+
+function stopAlarm() {
+  if (_alarmInterval) { clearInterval(_alarmInterval); _alarmInterval = null; }
+}
+
+// Unlock audio context on first touch (iOS requirement)
+document.addEventListener('touchstart', () => { try { getAudioCtx().resume(); } catch(e){} }, { once: true });
 
 // ===== Reminders =====
 function scheduleReminder(note) {
@@ -279,9 +327,12 @@ function fireReminder(note) {
   // Update card to show overdue
   render();
 
+  // Alarm sound
+  if (note.alarm) startAlarm();
+
   // In-app banner
   const text = `⏰ ${note.title || 'Hatırlatıcı'}: ${note.body ? note.body.slice(0, 60) : 'Zamanı geldi!'}`;
-  showReminderBanner(text);
+  showReminderBanner(text, !!note.alarm);
 
   // Push notification if allowed
   if (Notification.permission === 'granted') {
@@ -298,11 +349,14 @@ function fireReminder(note) {
   }
 }
 
-function showReminderBanner(text) {
+function showReminderBanner(text, hasAlarm) {
   reminderBannerText.textContent = text;
   reminderBanner.style.display = '';
   clearTimeout(reminderBanner._hideTimer);
-  reminderBanner._hideTimer = setTimeout(() => reminderBanner.style.display = 'none', 8000);
+  // If alarm is playing, keep banner until manually closed
+  if (!hasAlarm) {
+    reminderBanner._hideTimer = setTimeout(() => reminderBanner.style.display = 'none', 8000);
+  }
 }
 
 function initReminders() {
@@ -365,6 +419,7 @@ tabs.forEach(tab => {
 
 reminderBannerClose.addEventListener('click', () => {
   reminderBanner.style.display = 'none';
+  stopAlarm();
 });
 
 // Close modal on Escape
