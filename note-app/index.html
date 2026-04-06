@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Notlarım" />
+  <meta name="theme-color" content="#6C63FF" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Notlarım</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="app-title">📝 Notlarım</h1>
+      <button class="btn-icon" id="addBtn" title="Yeni Not">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="search" id="searchInput" placeholder="Not ara..." autocomplete="off" />
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="tabs-wrap">
+    <button class="tab active" data-filter="all">Tümü</button>
+    <button class="tab" data-filter="reminder">⏰ Hatırlatıcılı</button>
+    <button class="tab" data-filter="pinned">📌 Sabitlendi</button>
+  </div>
+
+  <!-- Notes Grid -->
+  <main class="notes-container" id="notesContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🗒️</div>
+      <p>Henüz not yok.</p>
+      <p class="empty-sub">+ düğmesine basarak ilk notunu ekle!</p>
+    </div>
+  </main>
+
+  <!-- Reminder Countdown Banner -->
+  <div class="reminder-banner" id="reminderBanner" style="display:none">
+    <span id="reminderBannerText"></span>
+    <button id="reminderBannerClose">✕</button>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="overlay" id="overlay" style="display:none"></div>
+
+  <!-- Note Modal -->
+  <div class="modal" id="noteModal" style="display:none">
+    <div class="modal-header">
+      <h2 id="modalTitle">Yeni Not</h2>
+      <button class="btn-icon" id="closeModalBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Color Picker -->
+      <div class="color-row">
+        <span class="label">Renk</span>
+        <div class="color-options" id="colorOptions">
+          <button class="color-dot active" data-color="#ffffff" style="background:#ffffff"></button>
+          <button class="color-dot" data-color="#fef3c7" style="background:#fef3c7"></button>
+          <button class="color-dot" data-color="#d1fae5" style="background:#d1fae5"></button>
+          <button class="color-dot" data-color="#dbeafe" style="background:#dbeafe"></button>
+          <button class="color-dot" data-color="#ede9fe" style="background:#ede9fe"></button>
+          <button class="color-dot" data-color="#fce7f3" style="background:#fce7f3"></button>
+          <button class="color-dot" data-color="#fee2e2" style="background:#fee2e2"></button>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="field-group">
+        <label class="label" for="noteTitle">Başlık</label>
+        <input type="text" id="noteTitle" placeholder="Not başlığı..." maxlength="80" />
+      </div>
+
+      <!-- Content -->
+      <div class="field-group">
+        <label class="label" for="noteContent">İçerik</label>
+        <textarea id="noteContent" placeholder="Notunu buraya yaz..." rows="5"></textarea>
+      </div>
+
+      <!-- Reminder -->
+      <div class="field-group">
+        <label class="label">
+          ⏰ Hatırlatıcı
+          <span class="label-hint">(isteğe bağlı)</span>
+        </label>
+        <!-- Quick preset buttons -->
+        <div class="reminder-presets" id="reminderPresets">
+          <button class="preset-btn" data-preset="30m">30 dk</button>
+          <button class="preset-btn" data-preset="1h">1 saat</button>
+          <button class="preset-btn" data-preset="3h">3 saat</button>
+          <button class="preset-btn" data-preset="tomorrow">Yarın</button>
+          <button class="preset-btn" data-preset="nextweek">Gelecek Hafta</button>
+          <button class="preset-btn" data-preset="custom">🗓 Özel</button>
+        </div>
+        <!-- Custom datetime input (hidden until "Özel" selected) -->
+        <input type="datetime-local" id="noteReminder" style="display:none; margin-top:10px;" />
+        <div class="reminder-selected" id="reminderSelected" style="display:none">
+          <span id="reminderSelectedText"></span>
+          <button class="btn-clear-reminder" id="clearReminderBtn">✕ Kaldır</button>
+        </div>
+      </div>
+
+      <!-- Alarm -->
+      <div class="field-group toggle-row">
+        <label class="label" for="noteAlarm">🔔 Alarm Sesi</label>
+        <label class="toggle">
+          <input type="checkbox" id="noteAlarm" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Pin -->
+      <div class="field-group toggle-row">
+        <label class="label" for="notePin">📌 Sabitle</label>
+        <label class="toggle">
+          <input type="checkbox" id="notePin" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="deleteNoteBtn" style="display:none">Sil</button>
+      <button class="btn-primary" id="saveNoteBtn">Kaydet</button>
+    </div>
+  </div>
+
+  <!-- Notification Permission Prompt -->
+  <div class="notif-prompt" id="notifPrompt" style="display:none">
+    <div class="notif-prompt-inner">
+      <div class="notif-icon">🔔</div>
+      <p><strong>Hatırlatıcılar için bildirim iznine ihtiyaç var</strong></p>
+      <p class="notif-sub">Zamanı geldiğinde seni uyarmamız için izin ver.</p>
+      <div class="notif-actions">
+        <button class="btn-secondary" id="notifDenyBtn">Şimdi değil</button>
+        <button class="btn-primary" id="notifAllowBtn">İzin ver</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
