@@ -1,0 +1,22 @@
+{
+  "appId": "com.notlarim.app",
+  "appName": "Notlarım",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#6C63FF",
+      "sound": "beep.wav"
+    }
+  },
+  "ios": {
+    "contentInset": "always",
+    "allowsLinkPreview": false,
+    "backgroundColor": "#6C63FF"
+  },
+  "android": {
+    "backgroundColor": "#6C63FF",
+    "allowMixedContent": false
+  }
+}
